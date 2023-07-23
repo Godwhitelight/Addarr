@@ -1,4 +1,5 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ParseMode
 from telegram.ext import ConversationHandler
 
 import logging
@@ -9,17 +10,16 @@ from config import config
 from translations import i18n
 from addarr import getService, clearUserData, stop
 
-
-
 # Set up logging
 logLevel = logging.DEBUG if config.get("debugLogging", False) else logging.INFO
 logger = logger.getLogger("addarr.radarr", logLevel, config.get("logToConsole", False))
 
-SERIE_MOVIE_DELETE, READ_DELETE_CHOICE,GIVE_OPTION = range(3)
+SERIE_MOVIE_DELETE, READ_DELETE_CHOICE, GIVE_OPTION = range(3)
 
-def delete(update : Update, context):
-    if config.get("enableAllowlist") and not checkAllowed(update,"regular"):
-        #When using this mode, bot will remain silent if user is not in the allowlist.txt
+
+def delete(update: Update, context):
+    if config.get("enableAllowlist") and not checkAllowed(update, "regular"):
+        # When using this mode, bot will remain silent if user is not in the allowlist.txt
         logger.info("Allowlist is enabled, but userID isn't added into 'allowlist.txt'. So bot stays silent")
         return ConversationHandler.END
 
@@ -29,13 +29,13 @@ def delete(update : Update, context):
             text=i18n.t("addarr.NotAdmin"),
         )
         return ConversationHandler.END
-    
+
     if not checkId(update):
         context.bot.send_message(
             chat_id=update.effective_message.chat_id, text=i18n.t("addarr.Authorize")
         )
         return SERIE_MOVIE_DELETE
-    
+
     if update.message is not None:
         reply = update.message.text.lower()
     elif update.callback_query is not None:
@@ -46,12 +46,12 @@ def delete(update : Update, context):
     if reply == i18n.t("addarr.New").lower():
         logger.debug("User issued New command, so clearing user_data")
         clearUserData(context)
-    
+
     msg = context.bot.send_message(
-        chat_id=update.effective_message.chat_id, text='\U0001F3F7 '+i18n.t("addarr.Title")
+        chat_id=update.effective_message.chat_id, text='\U0001F3F7 ' + i18n.t("addarr.Title")
     )
     return SERIE_MOVIE_DELETE
-    
+
 
 def choiceDeleteSerieMovie(update, context):
     service = getService(context)
@@ -63,7 +63,7 @@ def choiceDeleteSerieMovie(update, context):
         return ConversationHandler.END
     if not checkId(update):
         if (
-            authentication(update, context) == "added"
+                authentication(update, context) == "added"
         ):  # To also stop the beginning command
             return ConversationHandler.END
     elif update.message.text.lower() == "/stop".lower() or update.message.text.lower() == "stop".lower():
@@ -97,18 +97,18 @@ def choiceDeleteSerieMovie(update, context):
             keyboard = [
                 [
                     InlineKeyboardButton(
-                        '\U0001F3AC '+i18n.t("addarr.Movie"),
+                        '\U0001F3AC ' + i18n.t("addarr.Movie"),
                         callback_data=i18n.t("addarr.Movie")
                     ),
                     InlineKeyboardButton(
-                        '\U0001F4FA '+i18n.t("addarr.Series"),
+                        '\U0001F4FA ' + i18n.t("addarr.Series"),
                         callback_data=i18n.t("addarr.Series")
                     ),
                 ],
-                [ InlineKeyboardButton(
-                        '\U0001F50D '+i18n.t("addarr.New"),
-                        callback_data=i18n.t("addarr.New")
-                    ),
+                [InlineKeyboardButton(
+                    '\U0001F50D ' + i18n.t("addarr.New"),
+                    callback_data=i18n.t("addarr.New")
+                ),
                 ]
             ]
             markup = InlineKeyboardMarkup(keyboard)
@@ -128,7 +128,7 @@ def confirmDelete(update, context):
         elif update.callback_query is not None:
             choice = update.callback_query.data
         context.user_data["choice"] = choice
-    
+
     choice = context.user_data["choice"]
     context.user_data["position"] = 0
 
@@ -138,39 +138,39 @@ def confirmDelete(update, context):
 
     searchResult = service.search(title)
     if not searchResult:
-        context.bot.send_message( 
-            chat_id=update.effective_message.chat_id, 
+        context.bot.send_message(
+            chat_id=update.effective_message.chat_id,
             text=i18n.t("addarr.searchresults", count=0),
         )
         clearUserData(context)
         return ConversationHandler.END
-        
+
     context.user_data["output"] = service.giveTitles(searchResult)
     idnumber = context.user_data["output"][position]["id"]
 
     if service.inLibrary(idnumber):
         keyboard = [
-                [
-                    InlineKeyboardButton(
-                        '\U00002795 '+i18n.t("addarr.Delete"),
-                        callback_data=i18n.t("addarr.Delete")
-                    ),
-                ],[
-                    InlineKeyboardButton(
-                        '\U000023ED '+i18n.t("addarr.StopDelete"),
-                        callback_data=i18n.t("addarr.Stop")
-                    ),
-                ],[ 
-                    InlineKeyboardButton(
-                        '\U0001F50D '+i18n.t("addarr.New"),
-                        callback_data=i18n.t("addarr.New")
-                    ),
-                ]
+            [
+                InlineKeyboardButton(
+                    '\U00002795 ' + i18n.t("addarr.Delete"),
+                    callback_data=i18n.t("addarr.Delete")
+                ),
+            ], [
+                InlineKeyboardButton(
+                    '\U000023ED ' + i18n.t("addarr.StopDelete"),
+                    callback_data=i18n.t("addarr.Stop")
+                ),
+            ], [
+                InlineKeyboardButton(
+                    '\U0001F50D ' + i18n.t("addarr.New"),
+                    callback_data=i18n.t("addarr.New")
+                ),
             ]
+        ]
         markup = InlineKeyboardMarkup(keyboard)
-        
+
         message = f"\n\n*{context.user_data['output'][position]['title']} ({context.user_data['output'][position]['year']})*"
-        
+
         if "update_msg" in context.user_data:
             context.bot.edit_message_text(
                 message_id=context.user_data["update_msg"],
@@ -179,19 +179,21 @@ def confirmDelete(update, context):
                 parse_mode=ParseMode.MARKDOWN,
             )
         else:
-            msg = context.bot.send_message(chat_id=update.effective_message.chat_id, text=message,parse_mode=ParseMode.MARKDOWN,)
+            msg = context.bot.send_message(chat_id=update.effective_message.chat_id, text=message,
+                                           parse_mode=ParseMode.MARKDOWN, )
             context.user_data["update_msg"] = msg.message_id
-        
+
         img = context.bot.sendPhoto(
             chat_id=update.effective_message.chat_id,
             photo=context.user_data["output"][position]["poster"],
         )
         context.user_data["photo_update_msg"] = img.message_id
-        
+
         if choice == i18n.t("addarr.Movie"):
-            message=i18n.t("addarr.messages.ThisDelete", subjectWithArticle=i18n.t("addarr.MovieWithArticle").lower())
+            message = i18n.t("addarr.messages.ThisDelete", subjectWithArticle=i18n.t("addarr.MovieWithArticle").lower())
         else:
-            message=i18n.t("addarr.messages.ThisDelete", subjectWithArticle=i18n.t("addarr.SeriesWithArticle").lower())
+            message = i18n.t("addarr.messages.ThisDelete",
+                             subjectWithArticle=i18n.t("addarr.SeriesWithArticle").lower())
         msg = context.bot.send_message(
             chat_id=update.effective_message.chat_id, text=message, reply_markup=markup
         )
@@ -199,9 +201,9 @@ def confirmDelete(update, context):
         context.user_data["update_msg"] = msg.message_id
     else:
         if choice == i18n.t("addarr.Movie"):
-            message=i18n.t("addarr.messages.NoExist", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
+            message = i18n.t("addarr.messages.NoExist", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
         else:
-            message=i18n.t("addarr.messages.NoExist", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
+            message = i18n.t("addarr.messages.NoExist", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
         context.bot.edit_message_text(
             message_id=context.user_data["update_msg"],
             chat_id=update.effective_message.chat_id,
@@ -211,26 +213,27 @@ def confirmDelete(update, context):
         return ConversationHandler.END
     return GIVE_OPTION
 
-def deleteSerieMovie(update, context):  
-    choice = context.user_data["choice"]  
+
+def deleteSerieMovie(update, context):
+    choice = context.user_data["choice"]
     position = context.user_data["position"]
     service = getService(context)
     idnumber = context.user_data["output"][position]["id"]
 
     if service.removeFromLibrary(idnumber):
         if choice == i18n.t("addarr.Movie"):
-            message=i18n.t("addarr.messages.DeleteSuccess", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
+            message = i18n.t("addarr.messages.DeleteSuccess", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
         else:
-            message=i18n.t("addarr.messages.DeleteSuccess", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
+            message = i18n.t("addarr.messages.DeleteSuccess", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
     else:
         if choice == i18n.t("addarr.Movie"):
-            message=i18n.t("addarr.messages.DeleteFailed", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
+            message = i18n.t("addarr.messages.DeleteFailed", subjectWithArticle=i18n.t("addarr.MovieWithArticle"))
         else:
-            message=i18n.t("addarr.messages.DeleteFailed", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
+            message = i18n.t("addarr.messages.DeleteFailed", subjectWithArticle=i18n.t("addarr.SeriesWithArticle"))
     context.bot.edit_message_text(
-            message_id=context.user_data["update_msg"],
-            chat_id=update.effective_message.chat_id,
-            text=message,
+        message_id=context.user_data["update_msg"],
+        chat_id=update.effective_message.chat_id,
+        text=message,
     )
     clearUserData(context)
     return ConversationHandler.END

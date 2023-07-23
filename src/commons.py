@@ -33,11 +33,12 @@ def cleanUrl(text):
     return url
 
 
-def generateApiQuery(app, endpoint, parameters={}):
+def generateApiQuery(app, endpoint, parameters=None):
+    parameters = parameters or {}
     try:
         apikey = config[app]["auth"]["apikey"]
         url = (
-            generateServerAddr(app) + "api/v3/" + str(endpoint) + "?apikey=" + str(apikey)
+                generateServerAddr(app) + "api/v3/" + str(endpoint) + "?apikey=" + str(apikey)
         )
         # If parameters exist iterate through dict and add parameters to URL.
         if parameters:
@@ -69,14 +70,14 @@ def checkId(update):
 
 
 def authentication(update, context):
-    if config.get("enableAllowlist") and not checkAllowed(update,"regular"):
-        #When using this mode, bot will remain silent if user is not in the allowlist.txt
+    if config.get("enableAllowlist") and not checkAllowed(update, "regular"):
+        # When using this mode, bot will remain silent if user is not in the allowlist.txt
         logger.info("Allowlist is enabled, but userID isn't added into 'allowlist.txt'. So bot stays silent")
         return ConversationHandler.END
-        
+
     chatid = update.effective_message.chat_id
     with open(CHATID_PATH, "r") as file:
-        if(str(chatid) in file.read()):
+        if (str(chatid) in file.read()):
             context.bot.send_message(
                 chat_id=update.effective_message.chat_id,
                 text=i18n.t("addarr.Chatid already allowed"),
@@ -85,7 +86,7 @@ def authentication(update, context):
         else:
             file.close()
             password = update.message.text
-            if("/auth" in password):
+            if ("/auth" in password):
                 password = password.replace("/auth ", "")
             if password == config["telegram"]["password"]:
                 with open(CHATID_PATH, "a") as file:
@@ -103,7 +104,7 @@ def authentication(update, context):
                 context.bot.send_message(
                     chat_id=update.effective_message.chat_id, text=i18n.t("addarr.Wrong password")
                 )
-                return ConversationHandler.END # This only stops the auth conv, so it goes back to choosing screen
+                return ConversationHandler.END  # This only stops the auth conv, so it goes back to choosing screen
 
 
 def getChatName(context, chatid):
@@ -130,9 +131,9 @@ def getChatName(context, chatid):
 
 # Check if user is an admin or an allowed user
 def checkAllowed(update, mode):
-    if mode == "admin": 
+    if mode == "admin":
         path = ADMIN_PATH
-    else: 
+    else:
         path = ALLOWLIST_PATH
     admin = False
     user = update.effective_user
@@ -149,7 +150,7 @@ def checkAllowed(update, mode):
 
 
 def format_bytes(num, suffix='B'):
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0

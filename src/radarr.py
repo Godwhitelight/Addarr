@@ -35,7 +35,7 @@ def giveTitles(parsed_json):
     data = []
     for movie in parsed_json:
         if all(
-            x in movie for x in ["title", "overview", "remotePoster", "year", "tmdbId"]
+                x in movie for x in ["title", "overview", "remotePoster", "year", "tmdbId"]
         ):
             data.append(
                 {
@@ -63,7 +63,8 @@ def addToLibrary(tmdbId, path, qualityProfileId, tags):
     )
     parsed_json = json.loads(req.text)
     data = json.dumps(buildData(parsed_json, path, qualityProfileId, tags))
-    add = requests.post(commons.generateApiQuery("radarr", "movie"), data=data, headers={'Content-Type': 'application/json'})
+    add = requests.post(commons.generateApiQuery("radarr", "movie"), data=data,
+                        headers={'Content-Type': 'application/json'})
     if add.status_code == 201:
         return True
     else:
@@ -71,7 +72,7 @@ def addToLibrary(tmdbId, path, qualityProfileId, tags):
 
 
 def removeFromLibrary(tmdbId):
-    parameters = { 
+    parameters = {
         "deleteFiles": str(True)
     }
     dbId = getDbIdFromImdbId(tmdbId)
@@ -112,8 +113,8 @@ def all_movies():
         data = []
         for movie in parsed_json:
             if all(
-                x in movie
-                for x in ["title", "year", "monitored", "status"]
+                    x in movie
+                    for x in ["title", "year", "monitored", "status"]
             ):
                 data.append(
                     {
@@ -144,10 +145,11 @@ def getTags():
 
 def createTag(tag):
     data_json = {
-        "id": max([t["id"] for t in getTags()])+1,
+        "id": max([t["id"] for t in getTags()]) + 1,
         "label": str(tag)
     }
-    add = requests.post(commons.generateApiQuery("radarr", "tag"), json=data_json, headers={'Content-Type': 'application/json'})
+    add = requests.post(commons.generateApiQuery("radarr", "tag"), json=data_json,
+                        headers={'Content-Type': 'application/json'})
     if add.status_code == 200:
         return True
     else:

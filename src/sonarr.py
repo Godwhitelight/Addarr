@@ -33,8 +33,8 @@ def giveTitles(parsed_json):
     data = []
     for show in parsed_json:
         if all(
-            x in show
-            for x in ["title", "statistics", "remotePoster", "year", "tvdbId"]
+                x in show
+                for x in ["title", "statistics", "remotePoster", "year", "tvdbId"]
         ):
             data.append(
                 {
@@ -62,7 +62,8 @@ def addToLibrary(tvdbId, path, qualityProfileId, tags, seasonsSelected):
     req = requests.get(commons.generateApiQuery("sonarr", "series/lookup", parameters))
     parsed_json = json.loads(req.text)
     data = json.dumps(buildData(parsed_json, path, qualityProfileId, tags, seasonsSelected))
-    add = requests.post(commons.generateApiQuery("sonarr", "series"), data=data, headers={'Content-Type': 'application/json'})
+    add = requests.post(commons.generateApiQuery("sonarr", "series"), data=data,
+                        headers={'Content-Type': 'application/json'})
     if add.status_code == 201:
         return True
     else:
@@ -70,7 +71,7 @@ def addToLibrary(tvdbId, path, qualityProfileId, tags, seasonsSelected):
 
 
 def removeFromLibrary(tvdbId):
-    parameters = { 
+    parameters = {
         "deleteFiles": str(True)
     }
     dbId = getDbIdFromImdbId(tvdbId)
@@ -126,8 +127,8 @@ def allSeries():
         data = []
         for show in parsed_json:
             if all(
-                x in show
-                for x in ["title", "year", "monitored", "status"]
+                    x in show
+                    for x in ["title", "year", "monitored", "status"]
             ):
                 data.append(
                     {
@@ -158,10 +159,11 @@ def getTags():
 
 def createTag(tag):
     data_json = {
-        "id": max([t["id"] for t in getTags()])+1,
+        "id": max([t["id"] for t in getTags()]) + 1,
         "label": str(tag)
     }
-    add = requests.post(commons.generateApiQuery("sonarr", "tag"), json=data_json, headers={'Content-Type': 'application/json'})
+    add = requests.post(commons.generateApiQuery("sonarr", "tag"), json=data_json,
+                        headers={'Content-Type': 'application/json'})
     if add.status_code == 200:
         return True
     else:
@@ -175,8 +177,10 @@ def getLanguageProfileId(language):
     languageId = [l["id"] for l in parsed_json if l["name"] == language]
     if len(languageId) == 0:
         languageId = [l["id"] for l in parsed_json]
-        logger.debug("Didn't find a match with languageProfile from the config file. Took instead the first languageId from languageProfile-API response")
+        logger.debug(
+            "Didn't find a match with languageProfile from the config file. Took instead the first languageId from languageProfile-API response")
     return languageId[0]
+
 
 def getSeasons(tvdbId):
     parameters = {"term": "tvdb:" + str(tvdbId)}
